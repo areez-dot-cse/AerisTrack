@@ -1,0 +1,35 @@
+{
+  "name": "tna-tracker",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Order and TNA tracker for a Tiruppur knitwear exporter: daily floor updates, run-rate delay warnings, buyer links.",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "migrate": "node src/db/migrate.js",
+    "seed": "node src/db/seed.js",
+    "test:unit": "node --test \"tests/unit/**/*.test.js\"",
+    "test": "NODE_ENV=test node --test --test-concurrency=1 \"tests/**/*.test.js\""
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.2",
+    "connect-pg-simple": "^10.0.0",
+    "dotenv": "^17.2.1",
+    "ejs": "^3.1.10",
+    "exceljs": "^4.4.0",
+    "express": "^5.1.0",
+    "express-rate-limit": "^8.1.0",
+    "express-session": "^1.18.2",
+    "helmet": "^8.1.0",
+    "multer": "^2.0.2",
+    "pg": "^8.16.3",
+    "zod": "^4.1.11"
+  },
+  "devDependencies": {
+    "supertest": "^7.1.4"
+  }
+}
