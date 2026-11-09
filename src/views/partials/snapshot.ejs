@@ -1,0 +1,33 @@
+<%
+  // The maths frozen into a warning, as a short list people can check by hand.
+  // Expects `snapshot` (warnings.snapshot JSON).
+  const s = snapshot;
+  const p = s.projection;
+  const unitWord = t('common.' + (s.capacityUnit ?? 'machines'));
+%>
+<% if (s.kind === 'milestone') { %>
+  <p><%= t('proj.milestoneOverdue', { name: s.milestone, days: s.overdueDays, date: fmtDate(s.plannedEnd) }) %></p>
+<% } else if (p) { %>
+  <ul class="maths-list">
+    <li><span><%= t('common.stage') %></span><span><%= s.stage %><% if (s.floor) { %> · <%= s.floor %><% } %></span></li>
+    <li><span><%= t('common.done') %> / <%= t('common.target') %></span><span><%= fmtQty(s.done) %> / <%= fmtQty(s.target) %></span></li>
+    <% if (p.state === 'STOPPED') { %>
+      <li><span><%= t('common.status') %></span><span><%= t('proj.stopped') %></span></li>
+      <li><span><%= t('common.remaining') %></span><span><%= fmtQty(p.remaining) %></span></li>
+      <li><span><%= t('order.deadline') %></span><span><%= fmtDate(s.deadline) %></span></li>
+    <% } else if (p.state === 'OVERDUE') { %>
+      <li><span><%= t('order.deadline') %></span><span><%= fmtDate(s.deadline) %> · <%= t('proj.lateBy', { days: p.daysLate }) %></span></li>
+      <li><span><%= t('common.remaining') %></span><span><%= fmtQty(p.remaining) %></span></li>
+    <% } else if (p.state === 'NO_DATA') { %>
+      <li><span><%= t('common.status') %></span><span><%= t('proj.noData') %><% if (p.stale) { %> · <%= t('proj.stale', { days: p.staleDays }) %><% } %></span></li>
+      <li><span><%= t('order.deadline') %></span><span><%= fmtDate(s.deadline) %></span></li>
+    <% } else { %>
+      <li><span><%= t('common.remaining') %> ÷ <%= p.daysLeft %> <%= t('common.workingDays') %></span><span><%= fmtQty(p.remaining) %> → <%= fmtQty(p.neededPerDay) %><%= t('common.perDay') %></span></li>
+      <li><span><%= p.machinesNow %> <%= unitWord %> × <%= Math.round(p.piecesPerMachine * 10) / 10 %> <%= t('common.pcs') %></span><span><%= fmtQty(Math.round(p.capacityPerDay)) %><%= t('common.perDay') %></span></li>
+      <% if (p.closedDays > 0) { %><li><span><%= t('proj.closed', { days: p.closedDays }) %></span><span></span></li><% } %>
+      <li><span><%= t('board.colFinish') %> <%= t('proj.vsDeadline', { deadline: fmtDate(s.deadline) }) %></span><span><%= fmtDate(p.expectedFinish) %> · <%= p.daysLate > 0 ? t('proj.lateBy', { days: p.daysLate }) : t('proj.onTime') %></span></li>
+      <% if (p.daysLate > 0) { %><li><span><%= t('proj.recover', { machines: p.machinesNeeded, unit: unitWord }) %></span><span><%= p.machinesNeeded %> / <%= s.totalMachines ?? '' %></span></li><% } %>
+      <% if (p.stale) { %><li><span><%= t('proj.stale', { days: p.staleDays }) %></span><span></span></li><% } %>
+    <% } %>
+  </ul>
+<% } %>

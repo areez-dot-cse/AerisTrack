@@ -1,0 +1,208 @@
+<%- include('../partials/head') %>
+<%- include('../partials/header') %>
+<%
+  const o = summary;
+  const h = o.headline;
+  const returnTo = `/orders/${o.id}`;
+%>
+<main class="container page stack-lg">
+  <div class="page-head">
+    <div>
+      <p class="muted"><a href="/board"><%= t('nav.board') %></a> / <%= o.buyer_name %></p>
+      <h1><%= o.po_number %> <span class="pill pill-<%= o.level %>"><%= t('status.' + o.level) %></span></h1>
+      <p><%= o.style %></p>
+    </div>
+    <dl class="kv">
+      <dt><%= t('common.buyer') %></dt><dd><%= o.buyer_name %> (<%= o.buyer_country %>)</dd>
+      <dt><%= t('order.lines') %></dt><dd><%= o.colours.join(', ') %> × <%= o.sizes.join(', ') %></dd>
+      <dt><%= t('common.total') %></dt><dd><%= fmtQty(o.total_qty) %> <%= t('common.pcs') %></dd>
+      <dt><%= t('common.exFactory') %></dt>
+      <dd><%= fmtDate(o.ex_factory_date) %> · <%= t('common.shipWeek') %> <%= o.shipWeek %>
+        <details>
+          <summary class="btn-link"><%= t('order.changeDate') %></summary>
+          <form method="post" action="/orders/<%= o.id %>/ex-factory" class="stack">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <div class="field"><label for="newDate"><%= t('order.newDate') %></label><input id="newDate" name="newDate" type="date" required value="<%= o.ex_factory_date %>"></div>
+            <div class="field"><label for="exReason"><%= t('common.reason') %></label><input id="exReason" name="reason" type="text" required maxlength="300"></div>
+            <button type="submit" class="btn btn-primary btn-sm"><%= t('common.save') %></button>
+          </form>
+        </details>
+      </dd>
+    </dl>
+  </div>
+  <%- include('../partials/flash') %>
+
+  <section class="banner banner-<%= o.level %>" aria-label="<%= t('order.statusBanner') %>">
+    <div class="banner-title"><span class="pill pill-<%= o.level %>"><%= t('status.' + o.level) %></span>
+      <% if (h) { %><span><%= h.milestone.name %></span><% } %></div>
+    <p><%= explain(h, { detailed: true }) %></p>
+    <% if (o.detectedWarning) { %>
+      <p><span class="dot-pending" aria-hidden="true"></span> <%= t('order.warningPending') %> · <a href="/review?tab=warnings#warning-<%= o.detectedWarning.id %>"><%= t('order.reviewIt') %></a></p>
+    <% } %>
+    <% o.confirmedWarnings.forEach((w) => { %>
+      <p><strong><%= t('order.warningConfirmed') %></strong> · <%= t('categories.' + w.reason_category) %> · <%= w.decided_by_name %>, <%= fmtDateTime(w.decided_at) %>
+        <% if (w.note_for_buyer) { %><br><em>“<%= w.note_for_buyer %>”</em><% } %></p>
+    <% }) %>
+  </section>
+
+  <section id="timeline">
+    <h2><%= t('order.timeline') %></h2>
+    <ol class="timeline">
+      <% o.milestones.forEach((m) => {
+        const isDate = m.kind === 'date';
+        const marker = isDate ? (m.actual_date ? 'done' : m.status.level !== 'none' ? 'overdue' : '') : (m.projection.state === 'COMPLETE' ? 'done' : ['NOT_STARTED'].includes(m.projection.state) ? '' : 'running');
+      %>
+      <li>
+        <span class="marker <%= marker %>" aria-hidden="true"></span>
+        <div class="tl-body">
+          <div>
+            <strong><%= m.name %></strong>
+            <% if (isDate) { %>
+              <% if (m.actual_date) { %><span class="pill pill-green pill-plain"><%= t('common.done') %></span>
+              <% } else if (m.status.level !== 'none') { %><span class="pill pill-<%= m.status.level %>"><%= t('proj.lateBy', { days: m.status.overdueDays }) %></span><% } %>
+            <% } else { %>
+              <span class="pill pill-<%= m.projection.level === 'none' ? 'none' : m.projection.level %> <%= m.projection.level === 'none' ? 'pill-plain' : '' %>"><%= t('state.' + m.projection.state) %></span>
+              <span class="muted"><%= fmtQty(m.done) %> / <%= fmtQty(m.target_qty) %></span>
+            <% } %>
+          </div>
+          <div class="tl-dates">
+            <% if (!isDate) { %><%= t('order.plannedStart') %> <%= fmtDate(m.planned_start) %> → <% } %>
+            <%= isDate ? t('common.planned') : t('order.deadline') %> <%= fmtDate(m.planned_end) %>
+            <% if (m.actual_date) { %> · <%= t('common.actual') %> <%= fmtDate(m.actual_date) %><% } %>
+            <% if (!isDate && m.floor_name) { %> · <%= m.unit_name %> · <%= m.floor_name %><% } %>
+          </div>
+          <div class="tl-actions">
+            <details>
+              <summary><%= isDate && !m.actual_date ? t('order.markDone') + ' · ' + t('order.editPlanned') : t('order.editPlanned') %></summary>
+              <% if (isDate && !m.actual_date) { %>
+              <form method="post" action="/orders/<%= o.id %>/milestones/<%= m.id %>/done" class="inline-form">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                <div class="field"><label for="done-<%= m.id %>"><%= t('order.doneOn') %></label><input id="done-<%= m.id %>" name="actualDate" type="date" required value="<%= today %>" max="<%= today %>"></div>
+                <button type="submit" class="btn btn-primary btn-sm"><%= t('order.markDone') %></button>
+              </form>
+              <% } %>
+              <form method="post" action="/orders/<%= o.id %>/milestones/<%= m.id %>/planned" class="inline-form">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                <% if (!isDate) { %><div class="field"><label for="ps-<%= m.id %>"><%= t('order.plannedStart') %></label><input id="ps-<%= m.id %>" name="plannedStart" type="date" required value="<%= m.planned_start %>"></div><% } %>
+                <div class="field"><label for="pe-<%= m.id %>"><%= isDate ? t('common.planned') : t('order.plannedEnd') %></label><input id="pe-<%= m.id %>" name="plannedEnd" type="date" required value="<%= m.planned_end %>"></div>
+                <div class="field"><label for="pr-<%= m.id %>"><%= t('common.reason') %></label><input id="pr-<%= m.id %>" name="reason" type="text" required maxlength="300" placeholder="<%= t('order.reasonHint') %>"></div>
+                <button type="submit" class="btn btn-sm"><%= t('order.editPlanned') %></button>
+              </form>
+            </details>
+          </div>
+        </div>
+      </li>
+      <% }) %>
+    </ol>
+  </section>
+
+  <section id="stages">
+    <h2><%= t('order.stages') %></h2>
+    <div class="grid-2">
+      <% o.stages.forEach((s) => { const unitWord = t('common.' + (s.capacity_unit ?? 'machines')); %>
+      <article class="card">
+        <div class="card-head">
+          <h3><%= s.name %></h3>
+          <span class="pill pill-<%= s.projection.level === 'none' ? 'none' : s.projection.level %> <%= s.projection.level === 'none' ? 'pill-plain' : '' %>"><%= t('state.' + s.projection.state) %></span>
+        </div>
+        <p class="muted"><%= s.unit_name %> · <%= s.floor_name %> · <%= s.total_machines %> <%= unitWord %></p>
+        <div class="row-between"><span><strong><%= fmtQty(s.done) %></strong> / <%= fmtQty(s.target_qty) %></span><span class="muted"><%= pct(s.done, s.target_qty) %>%</span></div>
+        <progress class="p-<%= s.projection.level === 'none' ? 'grey' : s.projection.level %>" value="<%= s.done %>" max="<%= s.target_qty %>"></progress>
+        <p class="muted"><%= explainStage(s, { detailed: true }) %></p>
+        <h4 class="muted"><%= t('order.lastEntries') %></h4>
+        <% if (s.recentEntries.length === 0) { %>
+          <p class="muted"><%= t('order.noEntries') %></p>
+        <% } else { %>
+          <table class="table entries">
+            <thead><tr><th><%= t('common.date') %></th><th class="num"><%= t('common.pieces') %></th><th class="num"><%= unitWord %></th><th><%= t('common.enteredBy') %></th></tr></thead>
+            <tbody>
+              <% s.recentEntries.forEach((e) => { %>
+              <tr><td><%= fmtDate(e.entry_date) %></td><td class="num"><%= fmtQty(e.pieces) %></td><td class="num"><%= e.machines %><% if (e.closed_until) { %> <small>→ <%= fmtDate(e.closed_until) %></small><% } %></td><td><%= e.entered_by_name %></td></tr>
+              <% }) %>
+            </tbody>
+          </table>
+        <% } %>
+        <% if (s.done < s.target_qty) { %>
+        <details>
+          <summary class="btn-link"><%= t('order.addEntry') %></summary>
+          <form method="post" action="/orders/<%= o.id %>/stages/<%= s.id %>/entries" enctype="multipart/form-data" class="stack">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <div class="form-row">
+              <div class="field"><label for="ed-<%= s.id %>"><%= t('order.entryDate') %></label><input id="ed-<%= s.id %>" name="entryDate" type="date" required value="<%= today %>" max="<%= today %>"></div>
+              <div class="field"><label for="pc-<%= s.id %>"><%= t('order.pieces') %></label><input id="pc-<%= s.id %>" name="pieces" type="number" min="0" max="<%= s.target_qty - s.done %>" required inputmode="numeric"></div>
+              <div class="field"><label for="mc-<%= s.id %>"><%= t('order.machinesLabel', { unit: unitWord, total: s.total_machines }) %></label><input id="mc-<%= s.id %>" name="machines" type="number" min="0" max="<%= s.total_machines %>" required inputmode="numeric" value="<%= s.recentEntries[0]?.machines ?? '' %>"></div>
+              <div class="field"><label for="cd-<%= s.id %>"><%= t('order.closedDays') %></label><input id="cd-<%= s.id %>" name="closedDays" type="number" min="1" max="30" inputmode="numeric"></div>
+            </div>
+            <div class="field"><label for="nt-<%= s.id %>"><%= t('common.note') %> (<%= t('common.optional') %>)</label><textarea id="nt-<%= s.id %>" name="noteText" maxlength="2000"></textarea></div>
+            <div class="field"><label for="ph-<%= s.id %>"><%= t('common.photo') %> (<%= t('common.optional') %>)</label><input id="ph-<%= s.id %>" name="photo" type="file" accept="image/jpeg,image/png,image/webp"></div>
+            <button type="submit" class="btn btn-primary" data-loading="<%= t('common.saving') %>"><%= t('common.save') %></button>
+          </form>
+        </details>
+        <% } %>
+      </article>
+      <% }) %>
+    </div>
+  </section>
+
+  <section id="photos">
+    <h2><%= t('common.photos') %></h2>
+    <% if (photos.length === 0) { %>
+      <div class="empty"><p><%= t('order.photosEmpty') %></p></div>
+    <% } else { %>
+    <div class="photo-grid">
+      <% photos.forEach((p) => { %>
+      <figure>
+        <a href="/media/<%= p.id %>" target="_blank" rel="noopener"><img src="/media/<%= p.id %>" alt="<%= p.stage_name ?? t('common.photo') %> <%= p.entry_date ? fmtDate(p.entry_date) : '' %>" loading="lazy"></a>
+        <figcaption>
+          <span><%= p.stage_name ?? '' %> · <%= p.entry_date ? fmtDate(p.entry_date) : fmtDate(String(p.created_at).slice(0, 10)) %></span>
+          <form method="post" action="/orders/<%= o.id %>/media/<%= p.id %>/share">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <input type="hidden" name="shared" value="<%= p.shared_with_buyer ? '0' : '1' %>">
+            <button type="submit" class="btn-link" title="<%= p.shared_with_buyer ? t('order.sharedWithBuyer') : t('order.hidden') %>"><%= p.shared_with_buyer ? t('order.hide') : t('order.share') %></button>
+          </form>
+        </figcaption>
+        <small class="muted"><%= p.shared_with_buyer ? t('order.sharedWithBuyer') : t('order.hidden') %></small>
+      </figure>
+      <% }) %>
+    </div>
+    <% } %>
+  </section>
+
+  <section id="notes">
+    <h2><%= t('common.notes') %></h2>
+    <% if (notes.length === 0) { %>
+      <div class="empty"><p><%= t('order.notesEmpty') %></p></div>
+    <% } else { %>
+    <div class="stack">
+      <% notes.forEach((note) => { %><%- include('../partials/note', { note, categories, isStuck, returnTo, showOrder: false }) %><% }) %>
+    </div>
+    <% } %>
+  </section>
+
+  <section id="history">
+    <h2><%= t('order.history') %></h2>
+    <% if (dateChanges.length === 0) { %>
+      <div class="empty"><p><%= t('order.historyEmpty') %></p></div>
+    <% } else { %>
+    <div class="table-wrap">
+      <table class="table table-cards">
+        <thead><tr><th><%= t('common.when') %></th><th><%= t('common.who') %></th><th><%= t('common.milestone') %></th><th><%= t('common.old') %></th><th><%= t('common.new') %></th><th><%= t('common.reason') %></th></tr></thead>
+        <tbody>
+          <% dateChanges.forEach((c) => { %>
+          <tr>
+            <td data-label="<%= t('common.when') %>"><%= fmtDateTime(c.changed_at) %></td>
+            <td data-label="<%= t('common.who') %>"><%= c.changed_by_name %></td>
+            <td data-label="<%= t('common.milestone') %>"><%= c.milestone_name ?? '' %> <span class="muted"><%= t('order.field_' + c.field) %></span></td>
+            <td data-label="<%= t('common.old') %>"><%= c.old_value ? fmtDate(c.old_value) : '—' %></td>
+            <td data-label="<%= t('common.new') %>"><%= c.new_value ? fmtDate(c.new_value) : '—' %></td>
+            <td data-label="<%= t('common.reason') %>"><%= c.reason %></td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+    <% } %>
+  </section>
+  <script type="module" src="/js/forms.js"></script>
+</main>
+<%- include('../partials/footer') %>

@@ -14,6 +14,9 @@ import { flash } from './middleware/flash.js';
 import { notFoundHandler, errorHandler } from './middleware/errors.js';
 import authRoutes from './routes/auth.js';
 import boardRoutes from './routes/board.js';
+import templateRoutes from './routes/templates.js';
+import orderRoutes from './routes/orders.js';
+import mediaRoutes from './routes/media.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PgSession = connectPgSimple(session);
@@ -69,6 +72,9 @@ export function createApp() {
   });
   app.use(authRoutes);
   app.use(boardRoutes);
+  app.use(templateRoutes);
+  app.use(orderRoutes);
+  app.use(mediaRoutes);
 
   app.use(notFoundHandler);
   app.use(errorHandler);

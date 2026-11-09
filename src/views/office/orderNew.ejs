@@ -1,0 +1,118 @@
+<%- include('../partials/head') %>
+<%- include('../partials/header') %>
+<main class="container page">
+  <div class="page-head">
+    <h1><%= t('order.new') %></h1>
+    <a class="btn" href="/board"><%= t('common.cancel') %></a>
+  </div>
+  <% if (Object.keys(errors).length) { %><div class="flash flash-error" role="alert"><%= t('errors.validation') %></div><% } %>
+  <noscript><div class="banner banner-amber"><%= t('order.needsJs') %></div></noscript>
+  <form method="post" action="/orders" id="order-form" class="stack-lg">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+
+    <section class="card">
+      <h2>1. <%= t('order.poDetails') %></h2>
+      <div class="form-row">
+        <div class="field">
+          <label for="poNumber"><%= t('order.po') %></label>
+          <input id="poNumber" name="poNumber" type="text" required maxlength="40" value="<%= values.poNumber ?? '' %>" <%= errors.poNumber ? 'aria-invalid="true"' : '' %>>
+          <% if (errors.poNumber) { %><div class="error"><%= errors.poNumber %></div><% } %>
+        </div>
+        <div class="field">
+          <label for="buyerId"><%= t('common.buyer') %></label>
+          <select id="buyerId" name="buyerId" required <%= errors.buyerId ? 'aria-invalid="true"' : '' %>>
+            <option value=""></option>
+            <% buyers.forEach((b) => { %><option value="<%= b.id %>" <%= String(values.buyerId) === String(b.id) ? 'selected' : '' %>><%= b.name %> (<%= b.country %>)</option><% }) %>
+          </select>
+          <% if (errors.buyerId) { %><div class="error"><%= errors.buyerId %></div><% } %>
+        </div>
+        <div class="field">
+          <label for="style"><%= t('order.style') %></label>
+          <input id="style" name="style" type="text" required maxlength="120" value="<%= values.style ?? '' %>" <%= errors.style ? 'aria-invalid="true"' : '' %>>
+          <% if (errors.style) { %><div class="error"><%= errors.style %></div><% } %>
+        </div>
+        <div class="field">
+          <label for="exFactoryDate"><%= t('order.exFactory') %></label>
+          <input id="exFactoryDate" name="exFactoryDate" type="date" required value="<%= values.exFactoryDate ?? '' %>" <%= errors.exFactoryDate ? 'aria-invalid="true"' : '' %>>
+          <% if (errors.exFactoryDate) { %><div class="error"><%= errors.exFactoryDate %></div><% } %>
+        </div>
+        <div class="field">
+          <label for="templateId"><%= t('order.template') %></label>
+          <select id="templateId" name="templateId" required <%= errors.templateId ? 'aria-invalid="true"' : '' %>>
+            <option value=""></option>
+            <% templates.forEach((tpl) => { %><option value="<%= tpl.id %>" <%= String(values.templateId) === String(tpl.id) ? 'selected' : '' %>><%= tpl.name %></option><% }) %>
+          </select>
+          <% if (errors.templateId) { %><div class="error"><%= errors.templateId %></div><% } %>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>2. <%= t('order.quantities') %></h2>
+      <% if (errors.lines) { %><div class="error"><%= errors.lines %></div><% } %>
+      <div class="table-wrap">
+        <table class="qty-grid" id="qty-grid">
+          <thead>
+            <tr>
+              <th><%= t('order.colour') %></th>
+              <% values.sizes.forEach((size, j) => { %><th><input type="text" name="sizes[<%= j %>]" value="<%= size %>" maxlength="20" aria-label="<%= t('order.size') %>"></th><% }) %>
+              <th><%= t('order.rowTotal') %></th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <% values.colours.forEach((colour, i) => { %>
+            <tr class="colour-row">
+              <td class="colour-cell"><input type="text" name="colours[<%= i %>]" value="<%= colour %>" maxlength="60" placeholder="<%= t('order.colour') %>" aria-label="<%= t('order.colour') %>"></td>
+              <% values.sizes.forEach((size, j) => { %><td><input type="number" name="qty[<%= i %>][<%= j %>]" min="0" step="1" inputmode="numeric" value="<%= (values.qty[i] ?? [])[j] ?? '' %>" aria-label="<%= colour || t('order.colour') %> <%= size %>"></td><% }) %>
+              <td class="total row-total">0</td>
+              <td><button type="button" class="btn btn-sm" data-action="remove-colour"><%= t('order.removeColour') %></button></td>
+            </tr>
+            <% }) %>
+          </tbody>
+          <tfoot>
+            <tr>
+              <td class="total"><%= t('order.grandTotal') %></td>
+              <% values.sizes.forEach(() => { %><td class="total col-total">0</td><% }) %>
+              <td class="total grand-total">0</td>
+              <td></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+      <p class="row">
+        <button type="button" class="btn" id="add-colour"><%= t('order.addColour') %></button>
+        <button type="button" class="btn" id="add-size"><%= t('common.add') %> <%= t('order.size').toLowerCase() %></button>
+      </p>
+    </section>
+
+    <section class="card">
+      <h2>3. <%= t('order.tnaPreview') %></h2>
+      <p class="muted" id="tna-hint"><%= t('order.previewHint') %></p>
+      <div class="banner banner-amber" id="tna-past" hidden><%= t('order.pastWarning') %></div>
+      <div class="table-wrap">
+        <table class="table" id="tna-preview" hidden>
+          <thead><tr><th>#</th><th><%= t('common.milestone') %></th><th><%= t('order.plannedStart') %></th><th><%= t('order.plannedEnd') %></th><th><%= t('order.floorFor') %></th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <% Object.keys(errors).filter((k) => k.startsWith('floors.')).forEach((k) => { %><div class="error"><%= k.slice(7) %>: <%= errors[k] %></div><% }) %>
+    </section>
+
+    <div class="row">
+      <button type="submit" class="btn btn-primary" data-loading="<%= t('common.saving') %>"><%= t('order.create') %></button>
+      <a class="btn" href="/board"><%= t('common.cancel') %></a>
+    </div>
+  </form>
+  <script type="application/json" id="setup-data"><%- JSON.stringify({
+    templates: templates.map((tpl) => ({ id: tpl.id, name: tpl.name, milestones: tpl.milestones.map((m) => ({ name: m.name, kind: m.kind, start: m.start_offset_days, end: m.end_offset_days })) })),
+    floors: floors.map((f) => ({ id: f.id, name: f.name, unit: f.unit_name, kind: f.unit_kind, total: f.total_machines, capacityUnit: f.capacity_unit })),
+    selectedFloors: values.floors ?? {},
+    today,
+    months: t('months'),
+    labels: { chooseFloor: t('order.chooseFloor'), colour: t('order.colour'), size: t('order.size'), removeColour: t('order.removeColour'), date: t('templates.date'), quantity: t('templates.quantity') },
+  }).replace(/</g, '\\u003c') %></script>
+  <script type="module" src="/js/forms.js"></script>
+  <script type="module" src="/js/orderSetup.js"></script>
+</main>
+<%- include('../partials/footer') %>

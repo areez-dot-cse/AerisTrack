@@ -1,0 +1,81 @@
+<%
+  // Side-by-side view of one floor note: original Tamil beside the English
+  // translation, the AI suggestion with its confidence, and the merchandiser's
+  // confirm / retry actions. Expects `note`, `categories`, optional `isStuck`, `returnTo`, `showOrder`.
+  const stuck = typeof isStuck === 'function' && isStuck(note);
+  const band = confidenceBand(note.ai_confidence);
+  const shownCategory = note.final_category ?? note.ai_category ?? 'OTHER';
+  const back = typeof returnTo !== 'undefined' ? returnTo : '';
+%>
+<article class="note" id="note-<%= note.id %>">
+  <div class="note-meta">
+    <% if (typeof showOrder !== 'undefined' && showOrder) { %><a href="/orders/<%= note.order_id %>"><strong><%= note.po_number %></strong></a> · <% } %>
+    <span><%= note.stage_name %><% if (note.floor_name) { %> · <%= note.unit_name %> · <%= note.floor_name %><% } %></span>
+    <span>· <%= fmtDate(note.entry_date) %> · <%= note.entered_by_name %></span>
+    <% if (note.status === 'confirmed') { %>
+      <span class="pill pill-green pill-plain"><%= t('review.confirmed') %></span>
+    <% } else if (note.status === 'needs_review') { %>
+      <span class="pill pill-amber pill-plain"><%= t('review.needsReview') %></span>
+    <% } else if (note.status === 'suggested') { %>
+      <span class="pill pill-grey pill-plain"><%= t('review.suggested') %></span>
+    <% } %>
+  </div>
+  <div class="note-cols">
+    <div class="note-col">
+      <h4><%= t('review.original') %></h4>
+      <% if (note.audio_media_id) { %>
+        <audio controls preload="none" src="/media/<%= note.audio_media_id %>"></audio>
+        <% if (note.transcript_ta) { %><p class="note-ta"><%= note.transcript_ta %></p><% } else if (note.status === 'processing' && !stuck) { %><p class="muted"><%= t('review.processing') %></p><% } %>
+      <% } %>
+      <% if (note.original_text) { %><p class="note-ta" lang="ta"><%= note.original_text %></p><% } %>
+    </div>
+    <div class="note-col">
+      <h4><%= t('review.translation') %></h4>
+      <% if (note.translation_en) { %>
+        <p><%= note.translation_en %></p>
+      <% } else if (note.status === 'processing' && !stuck) { %>
+        <p class="muted" aria-live="polite"><%= t('review.processing') %></p>
+      <% } else if (stuck) { %>
+        <p class="muted"><%= t('review.failed') %></p>
+      <% } else { %>
+        <p class="muted"><%= t('review.unavailable') %></p>
+      <% } %>
+    </div>
+  </div>
+  <div class="note-meta">
+    <% if (note.ai_category) { %>
+      <span><%= t('review.aiSaid') %>: <strong><%= t('categories.' + note.ai_category) %></strong></span>
+      <span class="pill pill-plain conf-<%= band %>"><%= t('review.conf' + band[0].toUpperCase() + band.slice(1)) %> · <%= Math.round((note.ai_confidence ?? 0) * 100) %>%</span>
+      <span class="tag"><%= t('review.source') %>: <%= note.ai_source === 'groq' ? t('review.sourceAi') : note.ai_source === 'keywords' ? t('review.sourceKeywords') : t('review.sourceNone') %></span>
+    <% } %>
+    <% if (note.status === 'confirmed') { %>
+      <span><%= t('common.confirm') %>: <strong><%= t('categories.' + note.final_category) %></strong>
+        <% if (note.final_category !== note.ai_category) { %>(<%= t('review.changedFrom', { category: t('categories.' + (note.ai_category ?? 'OTHER')) }) %>)<% } %>
+        · <%= note.reviewed_by_name %>, <%= fmtDateTime(note.reviewed_at) %></span>
+    <% } %>
+  </div>
+  <% if (user && user.role === 'merchandiser' && note.status !== 'confirmed') { %>
+  <div class="note-actions row">
+    <% if (!(note.status === 'processing' && !stuck)) { %>
+    <form method="post" action="/review/notes/<%= note.id %>/confirm" class="inline-form">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <input type="hidden" name="returnTo" value="<%= back %>">
+      <div class="field">
+        <label for="cat-<%= note.id %>" class="sr-only"><%= t('review.category') %></label>
+        <select id="cat-<%= note.id %>" name="category">
+          <% categories.forEach((c) => { %><option value="<%= c %>" <%= c === shownCategory ? 'selected' : '' %>><%= t('categories.' + c) %></option><% }) %>
+        </select>
+      </div>
+      <button type="submit" class="btn btn-primary"><%= t('common.confirm') %></button>
+    </form>
+    <% } %>
+    <% if (note.ai_source !== 'groq' || stuck) { %>
+    <form method="post" action="/review/notes/<%= note.id %>/retry">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <input type="hidden" name="returnTo" value="<%= back %>">
+      <button type="submit" class="btn"><%= t('review.retryAi') %></button>
+    </form>
+    <% } %>
+  </div>
+  <% } %>
+</article>

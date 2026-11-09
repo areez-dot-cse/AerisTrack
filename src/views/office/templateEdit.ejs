@@ -1,0 +1,103 @@
+<%- include('../partials/head') %>
+<%- include('../partials/header') %>
+<main class="container page">
+  <div class="page-head">
+    <h1><%= template ? template.name : t('templates.new') %></h1>
+    <a class="btn" href="/templates"><%= t('common.back') %></a>
+  </div>
+  <%- include('../partials/flash') %>
+  <% if (errors._) { %><div class="flash flash-error" role="alert"><%= errors._ %></div><% } %>
+  <% if (errors.milestones) { %><div class="flash flash-error" role="alert"><%= errors.milestones %></div><% } %>
+  <form method="post" action="<%= template ? '/templates/' + template.id : '/templates' %>" id="template-form" class="stack-lg">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <div class="field">
+      <label for="name"><%= t('templates.name') %></label>
+      <input id="name" name="name" type="text" required maxlength="80" value="<%= values.name %>" <%= errors.name ? 'aria-invalid="true"' : '' %>>
+      <% if (errors.name) { %><div class="error"><%= errors.name %></div><% } %>
+    </div>
+
+    <section>
+      <h2><%= t('templates.milestones') %></h2>
+      <p class="muted"><%= t('templates.hint') %></p>
+      <div class="table-wrap">
+        <table class="table" id="milestone-rows">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th><%= t('templates.name') %></th>
+              <th><%= t('templates.kind') %></th>
+              <th><%= t('templates.startOffset') %></th>
+              <th><%= t('templates.endOffset') %></th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <% values.milestones.forEach((m, i) => { const err = (k) => errors[`milestones.${i}.${k}`]; %>
+            <tr class="milestone-row">
+              <td class="seq"><%= i + 1 %></td>
+              <td>
+                <input type="text" name="milestones[<%= i %>][name]" required maxlength="80" value="<%= m.name %>" aria-label="<%= t('templates.name') %>" <%= err('name') ? 'aria-invalid="true"' : '' %>>
+                <% if (err('name')) { %><div class="error"><%= err('name') %></div><% } %>
+              </td>
+              <td>
+                <select name="milestones[<%= i %>][kind]" class="kind" aria-label="<%= t('templates.kind') %>">
+                  <option value="date" <%= m.kind === 'date' ? 'selected' : '' %>><%= t('templates.date') %></option>
+                  <option value="quantity" <%= m.kind === 'quantity' ? 'selected' : '' %>><%= t('templates.quantity') %></option>
+                </select>
+              </td>
+              <td>
+                <input type="number" name="milestones[<%= i %>][startOffsetDays]" class="start" min="0" max="400" value="<%= m.startOffsetDays ?? '' %>" aria-label="<%= t('templates.startOffset') %>" <%= m.kind === 'date' ? 'disabled' : '' %> <%= err('startOffsetDays') ? 'aria-invalid="true"' : '' %>>
+                <% if (err('startOffsetDays')) { %><div class="error"><%= err('startOffsetDays') %></div><% } %>
+              </td>
+              <td>
+                <input type="number" name="milestones[<%= i %>][endOffsetDays]" required min="0" max="400" value="<%= m.endOffsetDays ?? '' %>" aria-label="<%= t('templates.endOffset') %>" <%= err('endOffsetDays') ? 'aria-invalid="true"' : '' %>>
+                <% if (err('endOffsetDays')) { %><div class="error"><%= err('endOffsetDays') %></div><% } %>
+              </td>
+              <td class="nowrap">
+                <button type="button" class="btn btn-sm" data-action="up" aria-label="<%= t('templates.up') %>">↑</button>
+                <button type="button" class="btn btn-sm" data-action="down" aria-label="<%= t('templates.down') %>">↓</button>
+                <button type="button" class="btn btn-sm" data-action="remove"><%= t('common.remove') %></button>
+              </td>
+            </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+      <p><button type="button" class="btn" id="add-row"><%= t('templates.addRow') %></button></p>
+    </section>
+
+    <div class="row">
+      <button type="submit" class="btn btn-primary" data-loading="<%= t('common.saving') %>"><%= t('common.save') %></button>
+      <a class="btn" href="/templates"><%= t('common.cancel') %></a>
+    </div>
+  </form>
+  <% if (template) { %>
+  <hr>
+  <form method="post" action="/templates/<%= template.id %>/delete" data-confirm="<%= t('templates.confirmDelete') %>">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <button type="submit" class="btn btn-danger"><%= t('common.delete') %></button>
+  </form>
+  <% } %>
+  <template id="row-template">
+    <tr class="milestone-row">
+      <td class="seq"></td>
+      <td><input type="text" name="milestones[0][name]" required maxlength="80" aria-label="<%= t('templates.name') %>"></td>
+      <td>
+        <select name="milestones[0][kind]" class="kind" aria-label="<%= t('templates.kind') %>">
+          <option value="date"><%= t('templates.date') %></option>
+          <option value="quantity"><%= t('templates.quantity') %></option>
+        </select>
+      </td>
+      <td><input type="number" name="milestones[0][startOffsetDays]" class="start" min="0" max="400" disabled aria-label="<%= t('templates.startOffset') %>"></td>
+      <td><input type="number" name="milestones[0][endOffsetDays]" required min="0" max="400" aria-label="<%= t('templates.endOffset') %>"></td>
+      <td class="nowrap">
+        <button type="button" class="btn btn-sm" data-action="up" aria-label="<%= t('templates.up') %>">↑</button>
+        <button type="button" class="btn btn-sm" data-action="down" aria-label="<%= t('templates.down') %>">↓</button>
+        <button type="button" class="btn btn-sm" data-action="remove"><%= t('common.remove') %></button>
+      </td>
+    </tr>
+  </template>
+  <script type="module" src="/js/forms.js"></script>
+  <script type="module" src="/js/templateEditor.js"></script>
+</main>
+<%- include('../partials/footer') %>

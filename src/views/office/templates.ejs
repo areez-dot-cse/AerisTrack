@@ -1,0 +1,30 @@
+<%- include('../partials/head') %>
+<%- include('../partials/header') %>
+<main class="container page">
+  <div class="page-head">
+    <h1><%= t('templates.title') %></h1>
+    <a class="btn btn-primary" href="/templates/new"><%= t('templates.new') %></a>
+  </div>
+  <%- include('../partials/flash') %>
+  <p class="muted"><%= t('templates.hint') %></p>
+  <% if (templates.length === 0) { %>
+    <div class="empty"><p><%= t('templates.empty') %></p><a class="btn" href="/templates/new"><%= t('templates.new') %></a></div>
+  <% } else { %>
+  <div class="table-wrap">
+    <table class="table table-cards">
+      <thead><tr><th><%= t('templates.name') %></th><th class="num"><%= t('templates.milestones') %></th><th><%= t('nav.board') %></th><th></th></tr></thead>
+      <tbody>
+        <% templates.forEach((tpl) => { %>
+        <tr>
+          <td data-label="<%= t('templates.name') %>"><a href="/templates/<%= tpl.id %>"><strong><%= tpl.name %></strong></a></td>
+          <td class="num" data-label="<%= t('templates.milestones') %>"><%= tpl.milestone_count %></td>
+          <td data-label=""><span class="muted"><%= t('templates.usedBy', { count: tpl.order_count }) %></span></td>
+          <td class="right"><a class="btn btn-sm" href="/templates/<%= tpl.id %>"><%= t('common.edit') %></a></td>
+        </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+  <% } %>
+</main>
+<%- include('../partials/footer') %>
