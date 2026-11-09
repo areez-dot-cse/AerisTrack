@@ -17,6 +17,8 @@ import boardRoutes from './routes/board.js';
 import templateRoutes from './routes/templates.js';
 import orderRoutes from './routes/orders.js';
 import mediaRoutes from './routes/media.js';
+import supervisorRoutes from './routes/supervisor.js';
+import supervisorApiRoutes from './routes/supervisorApi.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PgSession = connectPgSimple(session);
@@ -75,6 +77,8 @@ export function createApp() {
   app.use(templateRoutes);
   app.use(orderRoutes);
   app.use(mediaRoutes);
+  app.use(supervisorRoutes);
+  app.use(supervisorApiRoutes);
 
   app.use(notFoundHandler);
   app.use(errorHandler);
