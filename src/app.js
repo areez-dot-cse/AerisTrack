@@ -13,6 +13,7 @@ import { csrf } from './middleware/csrf.js';
 import { flash } from './middleware/flash.js';
 import { notFoundHandler, errorHandler } from './middleware/errors.js';
 import authRoutes from './routes/auth.js';
+import boardRoutes from './routes/board.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PgSession = connectPgSimple(session);
@@ -67,6 +68,7 @@ export function createApp() {
     res.redirect(req.user.role === 'supervisor' ? '/s/' : '/board');
   });
   app.use(authRoutes);
+  app.use(boardRoutes);
 
   app.use(notFoundHandler);
   app.use(errorHandler);

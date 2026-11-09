@@ -1,0 +1,112 @@
+<%- include('../partials/head') %>
+<%- include('../partials/header') %>
+<%
+  const link = (overrides) => {
+    const params = new URLSearchParams();
+    for (const [key, value] of Object.entries({ ...filters, ...overrides })) if (value) params.set(key, value);
+    const qs = params.toString();
+    return `/board${qs ? `?${qs}` : ''}`;
+  };
+  const statusLabels = { red: t('board.late'), amber: t('board.atRisk'), green: t('board.onTrack'), grey: t('board.noData') };
+%>
+<main class="container page">
+  <div class="page-head">
+    <h1><%= t('board.title') %></h1>
+    <span class="muted"><%= t('common.today') %> <%= fmtDate(today) %></span>
+  </div>
+  <%- include('../partials/flash') %>
+
+  <nav class="summary" aria-label="<%= t('common.status') %>">
+    <% ['red', 'amber', 'green', 'grey'].forEach((level) => { %>
+    <a href="<%= link({ status: filters.status === level ? '' : level }) %>" class="s-<%= level %> <%= filters.status === level ? 'active' : '' %>">
+      <div class="count"><%= counts[level] %></div>
+      <div class="label"><%= statusLabels[level] %></div>
+    </a>
+    <% }) %>
+  </nav>
+
+  <form method="get" action="/board" class="filters">
+    <div>
+      <label for="f-buyer"><%= t('board.filterBuyer') %></label>
+      <select id="f-buyer" name="buyer">
+        <option value=""><%= t('board.allBuyers') %></option>
+        <% buyers.forEach((b) => { %><option value="<%= b.id %>" <%= filters.buyer === String(b.id) ? 'selected' : '' %>><%= b.name %></option><% }) %>
+      </select>
+    </div>
+    <div>
+      <label for="f-unit"><%= t('board.filterUnit') %></label>
+      <select id="f-unit" name="unit">
+        <option value=""><%= t('board.allUnits') %></option>
+        <% units.forEach((u) => { %><option value="<%= u.id %>" <%= filters.unit === String(u.id) ? 'selected' : '' %>><%= u.name %></option><% }) %>
+      </select>
+    </div>
+    <div>
+      <label for="f-week"><%= t('board.filterWeek') %></label>
+      <select id="f-week" name="week">
+        <option value=""><%= t('board.allWeeks') %></option>
+        <% weeks.forEach((w) => { %><option value="<%= w %>" <%= filters.week === w ? 'selected' : '' %>><%= w %></option><% }) %>
+      </select>
+    </div>
+    <div>
+      <label for="f-status"><%= t('board.filterStatus') %></label>
+      <select id="f-status" name="status">
+        <option value=""><%= t('board.allStatuses') %></option>
+        <% ['red', 'amber', 'green', 'grey'].forEach((level) => { %><option value="<%= level %>" <%= filters.status === level ? 'selected' : '' %>><%= statusLabels[level] %></option><% }) %>
+      </select>
+    </div>
+    <button type="submit" class="btn"><%= t('board.apply') %></button>
+    <% if (hasFilters) { %><a class="btn" href="/board"><%= t('common.clear') %></a><% } %>
+  </form>
+
+  <% if (total === 0) { %>
+    <div class="empty"><p><%= t('board.noOrders') %></p><a class="btn btn-primary" href="/orders/new"><%= t('board.createFirst') %></a></div>
+  <% } else if (orders.length === 0) { %>
+    <div class="empty"><p><%= t('board.noMatch') %></p><a class="btn" href="/board"><%= t('common.clear') %></a></div>
+  <% } else { %>
+  <p class="muted"><%= t('board.showing', { count: orders.length, total }) %></p>
+  <div class="table-wrap">
+    <table class="table table-cards">
+      <thead>
+        <tr>
+          <th><%= t('common.status') %></th>
+          <th><%= t('board.colPo') %></th>
+          <th><%= t('common.buyer') %></th>
+          <th class="num"><%= t('common.qty') %></th>
+          <th><%= t('board.colStage') %></th>
+          <th><%= t('board.colExFactory') %></th>
+          <th><%= t('board.colFinish') %></th>
+          <th><%= t('board.colMaths') %></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% orders.forEach((o) => { const h = o.headline; const stage = h && h.kind === 'stage' ? h.milestone : null; const p = stage ? h.projection : null; %>
+        <tr class="board-row">
+          <td data-label="<%= t('common.status') %>">
+            <span class="pill pill-<%= o.level %>"><%= t('status.' + o.level) %></span>
+            <% if (o.detectedWarning) { %><span class="dot-pending" title="<%= t('board.pendingWarning') %>" aria-label="<%= t('board.pendingWarning') %>"></span><% } %>
+          </td>
+          <td class="full" data-label="<%= t('board.colPo') %>">
+            <a class="po" href="/orders/<%= o.id %>"><%= o.po_number %></a>
+            <div class="style"><%= o.style %></div>
+          </td>
+          <td data-label="<%= t('common.buyer') %>"><%= o.buyer_name %></td>
+          <td class="num" data-label="<%= t('common.qty') %>"><%= fmtQty(o.total_qty) %></td>
+          <td class="full stage-progress" data-label="<%= t('board.colStage') %>">
+            <% if (stage) { %>
+              <div class="num-line"><span><%= stage.name %></span><span class="muted"><%= fmtQty(stage.done) %> / <%= fmtQty(stage.target_qty) %></span></div>
+              <progress class="p-<%= o.level %>" value="<%= stage.done %>" max="<%= stage.target_qty %>"></progress>
+            <% } else if (h) { %>
+              <span><%= h.milestone.name %></span>
+            <% } %>
+          </td>
+          <td data-label="<%= t('board.colExFactory') %>"><%= fmtDate(o.ex_factory_date) %></td>
+          <td data-label="<%= t('board.colFinish') %>"><%= p?.expectedFinish ? fmtDate(p.expectedFinish) : p?.state === 'COMPLETE' ? t('state.COMPLETE') : '—' %></td>
+          <td class="full maths" data-label="<%= t('board.colMaths') %>"><%= explain(h) %></td>
+        </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+  <% } %>
+</main>
+<%- include('../partials/footer') %>
