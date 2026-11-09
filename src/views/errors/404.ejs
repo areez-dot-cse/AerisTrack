@@ -1,0 +1,10 @@
+<%- include('../partials/head') %>
+<%- include('../partials/header') %>
+<main class="container error-page">
+  <div class="code">404</div>
+  <h1><%= t('errors.404title') %></h1>
+  <p class="muted"><%= t('errors.404body') %></p>
+  <% if (typeof message !== 'undefined' && message) { %><p class="muted"><small><%= message %></small></p><% } %>
+  <p><a class="btn" href="/board"><%= t('errors.goHome') %></a></p>
+</main>
+<%- include('../partials/footer') %>

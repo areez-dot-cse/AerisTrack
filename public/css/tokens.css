@@ -1,0 +1,19 @@
+/* Design tokens. One accent colour; status colours are used only for status. */
+:root {
+  --bg: #FFFFFF;
+  --surface: #F7F7F5;
+  --line: #E6E6E3;
+  --ink: #1C1C1E;
+  --muted: #6B6B70;
+  --accent: #1F3A5F;        /* deep navy */
+  --accent-ink: #FFFFFF;
+  --green: #1F7A4D; --green-bg: #E8F3ED;
+  --amber: #8A5300; --amber-bg: #FBF1E0;
+  --red:   #B42318; --red-bg:   #FBEAE8;
+  --grey:  #5F5F66; --grey-bg:  #F0F0F1;
+  --radius: 8px;
+  --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px; --space-5: 24px; --space-6: 32px;
+  --font: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans Tamil", sans-serif;
+  --text-sm: 14px; --text-md: 16px; --text-lg: 20px; --text-xl: 28px;
+  --shadow: 0 1px 2px rgba(28, 28, 30, 0.06);
+}

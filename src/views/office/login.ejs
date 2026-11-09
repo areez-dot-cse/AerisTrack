@@ -1,0 +1,41 @@
+<%- include('../partials/head') %>
+<main class="login-wrap">
+  <p class="brand"><span class="brand-mark" aria-hidden="true"></span><%= t('app.company') %></p>
+  <h1><%= t('login.title') %></h1>
+  <nav class="login-tabs" aria-label="Sign-in type">
+    <a href="/login" class="<%= tab === 'office' ? 'active' : '' %>"><%= t('login.office') %></a>
+    <a href="/login?tab=supervisor" class="<%= tab === 'supervisor' ? 'active' : '' %>"><%= t('login.supervisor') %></a>
+  </nav>
+  <% if (error) { %><div class="flash flash-error" role="alert"><%= error %></div><% } %>
+  <% if (tab === 'office') { %>
+  <form method="post" action="/login/office" class="stack">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <div class="field">
+      <label for="email"><%= t('login.email') %></label>
+      <input id="email" name="email" type="email" autocomplete="username" required value="<%= values.email ?? '' %>" autofocus>
+    </div>
+    <div class="field">
+      <label for="password"><%= t('login.password') %></label>
+      <input id="password" name="password" type="password" autocomplete="current-password" required>
+    </div>
+    <button type="submit" class="btn btn-primary btn-block" data-loading="<%= t('common.loading') %>"><%= t('login.signIn') %></button>
+    <p class="muted"><%= t('login.officeHint') %> <%= t('login.demoHint') %></p>
+  </form>
+  <% } else { %>
+  <form method="post" action="/login/supervisor" class="stack">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <div class="field">
+      <label for="phone"><%= t('login.phone') %></label>
+      <input id="phone" name="phone" type="tel" inputmode="numeric" pattern="[0-9]{10}" maxlength="10" autocomplete="tel-national" required value="<%= values.phone ?? '' %>" autofocus>
+    </div>
+    <div class="field">
+      <label for="pin"><%= t('login.pin') %></label>
+      <input id="pin" name="pin" type="password" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" autocomplete="current-password" required>
+    </div>
+    <button type="submit" class="btn btn-primary btn-block" data-loading="<%= t('common.loading') %>"><%= t('login.signIn') %></button>
+    <p class="muted"><%= t('login.supervisorHint') %> <%= t('login.demoHint') %></p>
+  </form>
+  <% } %>
+  <script type="module" src="/js/forms.js"></script>
+</main>
+<%- include('../partials/footer') %>

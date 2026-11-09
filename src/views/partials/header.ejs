@@ -1,0 +1,41 @@
+<%
+  const nav = [
+    ['/board', t('nav.board')],
+    ['/review', t('nav.review')],
+    ['/templates', t('nav.templates')],
+    ['/buyers', t('nav.buyers')],
+  ];
+  const current = typeof currentPath !== 'undefined' ? currentPath : '';
+  const isActive = (href) => current === href || current.startsWith(href + '/') || (href === '/board' && current.startsWith('/orders'));
+%>
+<header class="topbar">
+  <div class="container">
+    <a class="brand" href="/board"><span class="brand-mark" aria-hidden="true"></span><%= t('app.company') %></a>
+    <% if (typeof user !== 'undefined' && user) { %>
+    <nav class="nav" aria-label="Main">
+      <% nav.forEach(([href, label]) => { %><a href="<%= href %>" class="<%= isActive(href) ? 'active' : '' %>"><%= label %></a><% }) %>
+      <a href="/orders/new" class="btn btn-primary btn-sm"><%= t('nav.newOrder') %></a>
+    </nav>
+    <details class="nav-menu">
+      <summary><%= t('nav.menu') %></summary>
+      <div class="menu">
+        <div class="menu-label"><%= t('nav.signedInAs') %> <%= user.name %></div>
+        <div class="nav-only-mobile">
+          <% nav.forEach(([href, label]) => { %><a href="<%= href %>"><%= label %></a><% }) %>
+          <a href="/orders/new"><%= t('nav.newOrder') %></a>
+          <hr>
+        </div>
+        <form method="post" action="/language">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <input type="hidden" name="lang" value="<%= lang === 'ta' ? 'en' : 'ta' %>">
+          <button type="submit"><%= t('nav.language') %>: <%= lang === 'ta' ? t('nav.english') : t('nav.tamil') %></button>
+        </form>
+        <form method="post" action="/logout">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <button type="submit"><%= t('nav.logout') %></button>
+        </form>
+      </div>
+    </details>
+    <% } %>
+  </div>
+</header>
