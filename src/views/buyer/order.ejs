@@ -1,0 +1,105 @@
+<%- include('../partials/buyerHead') %>
+<% const o = order; %>
+<main class="container page stack-lg">
+  <div class="page-head">
+    <div>
+      <p class="muted"><a href="<%= base %>"><%= t('buyer.yourOrders') %></a></p>
+      <h1><%= o.po_number %></h1>
+      <p><%= o.style %></p>
+    </div>
+    <dl class="kv">
+      <dt><%= t('common.qty') %></dt><dd><%= fmtQty(o.total_qty) %> <%= t('common.pcs') %> · <%= o.colours.join(', ') %></dd>
+      <dt><%= t('common.exFactory') %></dt><dd><%= fmtDate(o.ex_factory_date) %></dd>
+      <dt><%= t('buyer.currentStage') %></dt><dd><%= o.currentStage ? o.currentStage.name : t('buyer.complete') %> · <%= o.progressPct %>%</dd>
+    </dl>
+  </div>
+
+  <% if (o.confirmedWarnings.length > 0) { %>
+  <section>
+    <h2><%= t('buyer.warnings') %></h2>
+    <div class="stack">
+      <% o.confirmedWarnings.forEach((w) => { %>
+      <article class="banner banner-<%= w.level %>">
+        <div class="banner-title"><span class="pill pill-<%= w.level %>"><%= t('status.' + w.level) %></span> <%= t('categories.' + w.reason_category) %> <span class="muted">· <%= t('buyer.confirmedOn') %> <%= fmtDateTime(w.decided_at) %></span></div>
+        <% if (w.note_for_buyer) { %><p><%= w.note_for_buyer %></p><% } %>
+        <%- include('../partials/snapshot', { snapshot: w.snapshot }) %>
+      </article>
+      <% }) %>
+    </div>
+  </section>
+  <% } %>
+
+  <section>
+    <h2><%= t('buyer.stages') %></h2>
+    <div class="grid-2">
+      <% o.stages.forEach((s) => { %>
+      <div class="card">
+        <div class="row-between"><strong><%= s.name %></strong><span class="muted"><%= fmtQty(s.done) %> / <%= fmtQty(s.target_qty) %></span></div>
+        <progress value="<%= s.done %>" max="<%= s.target_qty %>"></progress>
+        <small class="muted"><%= fmtDate(s.planned_start) %> → <%= fmtDate(s.planned_end) %><% if (s.projection.state === 'COMPLETE') { %> · <%= t('buyer.complete') %><% } %></small>
+      </div>
+      <% }) %>
+    </div>
+  </section>
+
+  <section>
+    <h2><%= t('buyer.milestones') %></h2>
+    <div class="table-wrap">
+      <table class="table table-cards">
+        <thead><tr><th><%= t('common.milestone') %></th><th><%= t('common.planned') %></th><th><%= t('common.actual') %></th></tr></thead>
+        <tbody>
+          <% o.milestones.forEach((m) => { %>
+          <tr>
+            <td data-label="<%= t('common.milestone') %>"><%= m.name %></td>
+            <td data-label="<%= t('common.planned') %>"><%= m.kind === 'quantity' ? fmtDate(m.planned_start) + ' → ' + fmtDate(m.planned_end) : fmtDate(m.planned_end) %></td>
+            <td data-label="<%= t('common.actual') %>"><%= m.kind === 'quantity' ? (m.projection.state === 'COMPLETE' ? t('buyer.complete') : fmtQty(m.done) + ' / ' + fmtQty(m.target_qty)) : (m.actual_date ? fmtDate(m.actual_date) : '—') %></td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2><%= t('buyer.photos') %></h2>
+    <% if (photos.length === 0) { %>
+      <div class="empty"><p><%= t('buyer.noPhotos') %></p></div>
+    <% } else { %>
+    <div class="photo-grid">
+      <% photos.forEach((p) => { %>
+      <figure>
+        <a href="<%= base %>/media/<%= p.id %>" target="_blank" rel="noopener"><img src="<%= base %>/media/<%= p.id %>" alt="<%= p.stage_name ?? t('common.photo') %>" loading="lazy"></a>
+        <figcaption><span><%= p.stage_name ?? '' %> · <%= p.entry_date ? fmtDate(p.entry_date) : '' %></span></figcaption>
+      </figure>
+      <% }) %>
+    </div>
+    <% } %>
+  </section>
+
+  <section>
+    <h2><%= t('buyer.history') %></h2>
+    <% if (dateChanges.length === 0) { %>
+      <div class="empty"><p><%= t('buyer.noHistory') %></p></div>
+    <% } else { %>
+    <div class="table-wrap">
+      <table class="table table-cards">
+        <thead><tr><th><%= t('common.when') %></th><th><%= t('common.milestone') %></th><th><%= t('common.old') %></th><th><%= t('common.new') %></th><th><%= t('common.reason') %></th></tr></thead>
+        <tbody>
+          <% dateChanges.forEach((c) => { %>
+          <tr>
+            <td data-label="<%= t('common.when') %>"><%= fmtDateTime(c.changed_at) %></td>
+            <td data-label="<%= t('common.milestone') %>"><%= c.milestone_name ?? '' %> <span class="muted"><%= t('order.field_' + c.field) %></span></td>
+            <td data-label="<%= t('common.old') %>"><%= c.old_value ? fmtDate(c.old_value) : '—' %></td>
+            <td data-label="<%= t('common.new') %>"><%= c.new_value ? fmtDate(c.new_value) : '—' %></td>
+            <td data-label="<%= t('common.reason') %>"><%= c.reason %></td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+    <% } %>
+  </section>
+  <p><a class="btn" href="<%= base %>/weekly.xlsx" download data-loading="<%= t('common.preparing') %>"><%= t('buyer.weekly') %></a></p>
+  <script type="module" src="/js/forms.js"></script>
+</main>
+<%- include('../partials/footer') %>

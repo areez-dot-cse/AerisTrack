@@ -1,0 +1,56 @@
+<%- include('../partials/head') %>
+<%- include('../partials/header') %>
+<main class="container page">
+  <div class="page-head"><h1><%= t('buyers.title') %></h1></div>
+  <%- include('../partials/flash') %>
+  <div class="stack">
+    <% buyers.forEach((b) => { %>
+    <article class="card" id="buyer-<%= b.id %>">
+      <div class="card-head">
+        <h2><%= b.name %> <span class="muted"><%= b.country %></span></h2>
+        <span class="muted"><%= t('buyers.orders', { count: b.order_count }) %></span>
+      </div>
+      <% if (newLink && newLink.buyerId === b.id) { %>
+      <div class="banner banner-green">
+        <div class="banner-title"><%= t('buyers.linkCreated') %></div>
+        <div class="token-box" id="token-<%= b.id %>"><%= baseUrl %>/b/<%= newLink.token %></div>
+        <p><button type="button" class="btn btn-sm" data-copy="#token-<%= b.id %>" data-copied="<%= t('common.copied') %>"><%= t('common.copy') %></button></p>
+      </div>
+      <% } %>
+      <h3 class="muted"><%= t('buyers.activeLinks') %></h3>
+      <% if (b.links.length === 0) { %>
+        <p class="muted"><%= t('buyers.noLinks') %></p>
+      <% } else { %>
+      <table class="table">
+        <thead><tr><th><%= t('buyers.createdOn') %></th><th><%= t('buyers.expires') %></th><th></th></tr></thead>
+        <tbody>
+          <% b.links.forEach((l) => { %>
+          <tr>
+            <td><%= fmtDateTime(l.created_at) %></td>
+            <td><%= fmtDate(new Date(l.expires_at).toISOString().slice(0, 10)) %></td>
+            <td class="right">
+              <form method="post" action="/buyers/<%= b.id %>/links/<%= l.id %>/revoke" data-confirm="<%= t('buyers.confirmRevoke') %>">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                <button type="submit" class="btn btn-sm btn-danger"><%= t('buyers.revoke') %></button>
+              </form>
+            </td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+      <% } %>
+      <div class="row">
+        <form method="post" action="/buyers/<%= b.id %>/links">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <button type="submit" class="btn btn-primary"><%= t('buyers.createLink') %></button>
+          <span class="muted"><%= t('buyers.validFor') %></span>
+        </form>
+        <a class="btn" href="/buyers/<%= b.id %>/weekly.xlsx" download data-loading="<%= t('common.preparing') %>"><%= t('buyers.weekly') %></a>
+      </div>
+    </article>
+    <% }) %>
+  </div>
+  <script type="module" src="/js/forms.js"></script>
+  <script type="module" src="/js/copy.js"></script>
+</main>
+<%- include('../partials/footer') %>

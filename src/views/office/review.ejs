@@ -1,0 +1,68 @@
+<%- include('../partials/head') %>
+<%- include('../partials/header') %>
+<main class="container page">
+  <div class="page-head"><h1><%= t('review.title') %></h1></div>
+  <%- include('../partials/flash') %>
+  <nav class="tabs" aria-label="<%= t('review.title') %>">
+    <a href="/review" class="<%= tab === 'notes' ? 'active' : '' %>"><%= t('review.notes') %> <span class="badge"><%= noteCount %></span></a>
+    <a href="/review?tab=warnings" class="<%= tab === 'warnings' ? 'active' : '' %>"><%= t('review.warnings') %> <span class="badge"><%= warningCount %></span></a>
+  </nav>
+
+  <% if (tab === 'notes') { %>
+    <% if (notes.length === 0) { %>
+      <div class="empty"><p><strong><%= t('review.caughtUp') %></strong></p><p><%= t('review.caughtUpNotes') %></p></div>
+    <% } else { %>
+    <div class="stack">
+      <% notes.forEach((note) => { %><%- include('../partials/note', { note, categories, isStuck, returnTo: '/review', showOrder: true }) %><% }) %>
+    </div>
+    <% } %>
+  <% } else { %>
+    <% if (warnings.length === 0) { %>
+      <div class="empty"><p><strong><%= t('review.caughtUp') %></strong></p><p><%= t('review.caughtUpWarnings') %></p></div>
+    <% } else { %>
+    <div class="stack">
+      <% warnings.forEach((w) => { %>
+      <article class="card" id="warning-<%= w.id %>">
+        <div class="card-head">
+          <h2><a href="/orders/<%= w.order_id %>"><%= w.po_number %></a> <span class="pill pill-<%= w.level %>"><%= t('status.' + w.level) %></span></h2>
+          <span class="muted"><%= t('review.detectedAt') %> <%= fmtDateTime(w.detected_at) %></span>
+        </div>
+        <p class="muted"><%= w.style %> · <%= w.buyer_name %></p>
+        <%- include('../partials/snapshot', { snapshot: w.snapshot }) %>
+        <form method="post" action="/review/warnings/<%= w.id %>/confirm" class="stack">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <div class="form-row">
+            <div class="field">
+              <label for="cat-w-<%= w.id %>"><%= t('review.category') %></label>
+              <select id="cat-w-<%= w.id %>" name="reasonCategory">
+                <% categories.forEach((c) => { %><option value="<%= c %>" <%= c === (w.suggestedCategory ?? 'OTHER') ? 'selected' : '' %>><%= t('categories.' + c) %></option><% }) %>
+              </select>
+            </div>
+            <div class="field">
+              <label for="note-w-<%= w.id %>"><%= t('review.noteForBuyer') %></label>
+              <input id="note-w-<%= w.id %>" name="noteForBuyer" type="text" maxlength="1000">
+            </div>
+          </div>
+          <div class="row">
+            <button type="submit" class="btn btn-primary"><%= t('review.confirmWarning') %></button>
+          </div>
+        </form>
+        <details>
+          <summary class="btn-link"><%= t('review.dismissWarning') %></summary>
+          <form method="post" action="/review/warnings/<%= w.id %>/dismiss" class="inline-form">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <div class="field">
+              <label for="dis-<%= w.id %>"><%= t('review.dismissReason') %></label>
+              <input id="dis-<%= w.id %>" name="reason" type="text" required maxlength="300">
+            </div>
+            <button type="submit" class="btn btn-danger"><%= t('review.dismissWarning') %></button>
+          </form>
+        </details>
+      </article>
+      <% }) %>
+    </div>
+    <% } %>
+  <% } %>
+  <script type="module" src="/js/forms.js"></script>
+</main>
+<%- include('../partials/footer') %>

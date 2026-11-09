@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title><%= typeof title !== 'undefined' && title ? title + ' · ' : '' %>Company A</title>
+  <link rel="icon" href="/icons/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/css/tokens.css">
+  <link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="container">
+    <a class="brand" href="<%= typeof base !== 'undefined' ? base : '#' %>"><span class="brand-mark" aria-hidden="true"></span>Company A</a>
+    <% if (typeof buyer !== 'undefined' && buyer) { %><span class="muted"><%= buyer.name %> · <%= t('buyer.title') %></span><% } %>
+  </div>
+</header>

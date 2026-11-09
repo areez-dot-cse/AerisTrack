@@ -1,0 +1,31 @@
+<%- include('../partials/buyerHead') %>
+<main class="container page">
+  <div class="page-head">
+    <div><h1><%= t('buyer.yourOrders') %></h1><p class="muted"><%= t('buyer.providedBy') %> · <%= fmtDate(today) %></p></div>
+    <a class="btn" href="<%= base %>/weekly.xlsx" download data-loading="<%= t('common.preparing') %>"><%= t('buyer.weekly') %></a>
+  </div>
+  <% if (orders.length === 0) { %>
+    <div class="empty"><p><%= t('buyer.noOrders') %></p></div>
+  <% } else { %>
+  <div class="table-wrap">
+    <table class="table table-cards">
+      <thead><tr><th><%= t('export.po') %></th><th><%= t('export.style') %></th><th class="num"><%= t('common.qty') %></th><th><%= t('common.exFactory') %></th><th><%= t('buyer.currentStage') %></th><th><%= t('common.progress') %></th><th></th></tr></thead>
+      <tbody>
+        <% orders.forEach((o) => { const confirmed = o.confirmedWarnings[0]; %>
+        <tr>
+          <td data-label="<%= t('export.po') %>"><a href="<%= base %>/orders/<%= o.id %>"><strong><%= o.po_number %></strong></a></td>
+          <td data-label="<%= t('export.style') %>"><%= o.style %></td>
+          <td class="num" data-label="<%= t('common.qty') %>"><%= fmtQty(o.total_qty) %></td>
+          <td data-label="<%= t('common.exFactory') %>"><%= fmtDate(o.ex_factory_date) %></td>
+          <td data-label="<%= t('buyer.currentStage') %>"><%= o.currentStage ? o.currentStage.name : (o.ex_factory_date < today ? t('buyer.shipped') : t('buyer.complete')) %></td>
+          <td class="full" data-label="<%= t('common.progress') %>"><div class="row-between"><small><%= o.progressPct %>%</small></div><progress value="<%= o.totalDone %>" max="<%= o.totalTarget %>"></progress></td>
+          <td data-label=""><% if (confirmed) { %><span class="pill pill-<%= confirmed.level %>"><%= t('buyer.warningBadge') %></span><% } %></td>
+        </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+  <% } %>
+  <script type="module" src="/js/forms.js"></script>
+</main>
+<%- include('../partials/footer') %>

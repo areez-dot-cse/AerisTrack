@@ -19,6 +19,9 @@ import orderRoutes from './routes/orders.js';
 import mediaRoutes from './routes/media.js';
 import supervisorRoutes from './routes/supervisor.js';
 import supervisorApiRoutes from './routes/supervisorApi.js';
+import reviewRoutes from './routes/review.js';
+import buyersRoutes from './routes/buyers.js';
+import buyerLinkRoutes from './routes/buyerLink.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PgSession = connectPgSimple(session);
@@ -79,6 +82,9 @@ export function createApp() {
   app.use(mediaRoutes);
   app.use(supervisorRoutes);
   app.use(supervisorApiRoutes);
+  app.use(reviewRoutes);
+  app.use(buyersRoutes);
+  app.use(buyerLinkRoutes);
 
   app.use(notFoundHandler);
   app.use(errorHandler);
