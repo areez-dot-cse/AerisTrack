@@ -1,0 +1,37 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-tna_tracker}
+      POSTGRES_USER: ${POSTGRES_USER:-tna}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-tna_local_password}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  app:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "${PORT:-3000}:3000"
+    environment:
+      NODE_ENV: ${NODE_ENV:-production}
+      PORT: 3000
+      DATABASE_URL: postgresql://${POSTGRES_USER:-tna}:${POSTGRES_PASSWORD:-tna_local_password}@db:5432/${POSTGRES_DB:-tna_tracker}
+      SESSION_SECRET: ${SESSION_SECRET:-replace-this-demo-secret-before-production-2026}
+      GROQ_API_KEY: ${GROQ_API_KEY:-}
+      GROQ_STT_MODEL: ${GROQ_STT_MODEL:-whisper-large-v3}
+      GROQ_LLM_MODEL: ${GROQ_LLM_MODEL:-llama-3.3-70b-versatile}
+      DEMO_TODAY: ${DEMO_TODAY:-2026-11-04}
+      SEED_DEMO_DATA: ${SEED_DEMO_DATA:-true}
+
+volumes:
+  postgres-data:

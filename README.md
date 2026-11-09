@@ -4,9 +4,11 @@ Daily floor updates from supervisors' phones (in Tamil, offline-tolerant), green
 order against its time-and-action plan, run-rate delay warnings two weeks early with the maths shown, Tamil notes
 turned into English reason categories by AI with a human in the loop, and a read-only link per buyer.
 
-- **Run it:** see [deployment.md](deployment.md) (local setup, environment variables, demo logins, a 5-minute walkthrough).
+
+- **Run it with Docker:** `docker compose up --build` starts PostgreSQL, migrates, seeds the demo data, and starts the app; see [deployment.md](deployment.md#docker-compose) for details.
 - **Assumptions:** every decision beyond the client brief is listed in [docs/ASSUMPTIONS.md](docs/ASSUMPTIONS.md).
-- **Design notes:** architecture, data model, flows, the AI part, UI decisions, brief coverage, cuts and next steps in [docs/TDD-NOTES.md](docs/TDD-NOTES.md).
+
+
 - **Testing:** the 76 automated tests and the manual phone/browser checklist in [docs/TESTING.md](docs/TESTING.md).
 
 ## Stack
