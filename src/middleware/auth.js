@@ -27,6 +27,10 @@ export function requireRole(role) {
       return res.redirect(`/login${tab}`);
     }
     if (req.user.role !== role) return next(new HttpError(403, 'This page is for another role'));
+    // Protected pages must be revalidated after logout instead of being revived
+    // from the browser's history cache.
+    res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+    res.set('Pragma', 'no-cache');
     next();
   };
 }

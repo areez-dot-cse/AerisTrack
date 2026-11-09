@@ -66,6 +66,7 @@ router.post('/logout', (req, res) => {
   const wasSupervisor = req.user?.role === 'supervisor';
   req.session.destroy(() => {
     res.clearCookie('tna.sid');
+    res.set('Clear-Site-Data', '"cache"');
     res.redirect(wasSupervisor ? '/login?tab=supervisor' : '/login');
   });
 });
